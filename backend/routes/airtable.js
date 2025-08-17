@@ -1,284 +1,321 @@
 const express = require('express');
 const axios = require('axios');
-const { authenticateToken, getAirtableToken } = require('../middleware/auth');
+const User = require('../models/User');
+const { authenticateToken } = require('../middleware/auth');
 
 const router = express.Router();
 
-// Apply authentication middleware to all routes
-router.use(authenticateToken);
-router.use(getAirtableToken);
-
-// Helper function to make Airtable API calls
-const makeAirtableRequest = async (token, endpoint, method = 'GET', data = null) => {
-  try {
-    const config = {
-      method,
-      url: `${process.env.AIRTABLE_API_URL}${endpoint}`,
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      }
-    };
-    
-    if (data && (method === 'POST' || method === 'PATCH')) {
-      config.data = data;
-    }
-    
-    const response = await axios(config);
-    return response.data;
-  } catch (error) {
-    console.error('Airtable API error:', error.response?.data || error.message);
-    throw error;
-  }
-};
-
-// @route   GET /api/airtable/bases
-// @desc    Get all accessible bases for the user
+// @route   POST /api/airtable/test-connection
+// @desc    Test Airtable connection (matches frontend call)
 // @access  Private
-router.get('/bases', async (req, res) => {
+router.post('/test-connection', authenticateToken, async (req, res) => {
   try {
-    const data = await makeAirtableRequest(req.airtableToken, '/meta/bases');
+    console.log('🧪 Testing Airtable connection for user:', req.user.userId);
     
-    // Transform the data to include only what we need
-    const bases = data.bases.map(base => ({
-      id: base.id,
-      name: base.name,
-      permissionLevel: base.permissionLevel
-    }));
+    const user = await User.findById(req.user.userId);
     
-    res.json({ bases });
-    
-  } catch (error) {
-    console.error('Get bases error:', error.response?.data || error.message);
-    
-    if (error.response?.status === 401) {
+    if (!user || !user.airtableAccessToken) {
+      console.log('❌ No user or access token found');
       return res.status(401).json({ 
-        message: 'Airtable authorization expired',
-        needsRefresh: true 
+        success: false,
+        message: 'No Airtable access token found' 
       });
     }
     
-    res.status(500).json({ 
-      message: 'Failed to fetch bases',
-      error: error.response?.data?.error || error.message
+    console.log('✅ User found, testing connection...');
+    
+    // Test connection by getting user info
+    const response = await axios.get('https://api.airtable.com/v0/meta/whoami', {
+      headers: {
+        'Authorization': `Bearer ${user.airtableAccessToken}`
+      }
     });
+    
+    console.log('✅ Airtable connection successful');
+    
+    res.json({
+      success: true,
+      connected: true,
+      airtableUser: response.data,
+      message: 'Airtable connection successful'
+    });
+    
+  } catch (error) {
+    console.error('💥 Airtable test error:', error.response?.data || error.message);
+    res.status(500).json({ 
+      success: false,
+      connected: false,
+      message: 'Airtable connection failed',
+      error: error.response?.data || error.message 
+    });
+  }
+});
+
+// @route   GET /api/airtable/bases
+// @desc    Get user's Airtable bases
+// @access  Private
+router.get('/bases', authenticateToken, async (req, res) => {
+  try {
+    console.log('🔍 Fetching bases for user:', req.user.userId);
+    
+    const user = await User.findById(req.user.userId);
+    
+    if (!user || !user.airtableAccessToken) {
+      console.log('❌ No user or access token found');
+      return res.status(401).json({ message: 'No Airtable access token found' });
+    }
+    
+    console.log('✅ User found, making API request to Airtable...');
+    
+    // Fetch bases from Airtable
+    const response = await axios.get('https://api.airtable.com/v0/meta/bases', {
+      headers: {
+        'Authorization': `Bearer ${user.airtableAccessToken}`
+      }
+    });
+    
+    console.log('✅ Fetched bases successfully:', response.data.bases.length, 'bases');
+    
+    res.json({
+      bases: response.data.bases
+    });
+    
+  } catch (error) {
+    console.error('💥 Fetch bases error:', error.response?.data || error.message);
+    console.error('Error details:', error.response?.status, error.response?.statusText);
+    
+    if (error.response?.status === 401) {
+      res.status(401).json({ 
+        message: 'Invalid Airtable access token' 
+      });
+    } else {
+      res.status(500).json({ 
+        message: 'Failed to fetch Airtable bases',
+        error: error.response?.data || error.message 
+      });
+    }
   }
 });
 
 // @route   GET /api/airtable/bases/:baseId/tables
-// @desc    Get all tables in a specific base
+// @desc    Get tables for a specific base
 // @access  Private
-router.get('/bases/:baseId/tables', async (req, res) => {
+router.get('/bases/:baseId/tables', authenticateToken, async (req, res) => {
   try {
     const { baseId } = req.params;
-    const data = await makeAirtableRequest(req.airtableToken, `/meta/bases/${baseId}/tables`);
+    console.log('🔍 Fetching tables for base:', baseId);
     
-    // Transform the data to include only what we need
-    const tables = data.tables.map(table => ({
-      id: table.id,
-      name: table.name,
-      description: table.description,
-      primaryFieldId: table.primaryFieldId,
-      fields: table.fields.map(field => ({
-        id: field.id,
-        name: field.name,
-        type: field.type,
-        description: field.description,
-        options: field.options
-      }))
-    }));
+    const user = await User.findById(req.user.userId);
     
-    res.json({ tables });
+    if (!user || !user.airtableAccessToken) {
+      return res.status(401).json({ message: 'No Airtable access token found' });
+    }
+    
+    // Fetch base schema from Airtable
+    const response = await axios.get(`https://api.airtable.com/v0/meta/bases/${baseId}/tables`, {
+      headers: {
+        'Authorization': `Bearer ${user.airtableAccessToken}`
+      }
+    });
+    
+    console.log('✅ Fetched tables successfully:', response.data.tables.length, 'tables');
+    
+    res.json({
+      tables: response.data.tables
+    });
     
   } catch (error) {
-    console.error('Get tables error:', error.response?.data || error.message);
+    console.error('💥 Fetch tables error:', error.response?.data || error.message);
     
     if (error.response?.status === 401) {
-      return res.status(401).json({ 
-        message: 'Airtable authorization expired',
-        needsRefresh: true 
+      res.status(401).json({ 
+        message: 'Invalid Airtable access token' 
+      });
+    } else {
+      res.status(500).json({ 
+        message: 'Failed to fetch tables',
+        error: error.response?.data || error.message 
       });
     }
-    
-    if (error.response?.status === 404) {
-      return res.status(404).json({ message: 'Base not found' });
-    }
-    
-    res.status(500).json({ 
-      message: 'Failed to fetch tables',
-      error: error.response?.data?.error || error.message
-    });
   }
 });
 
 // @route   GET /api/airtable/bases/:baseId/tables/:tableId/fields
-// @desc    Get all fields in a specific table
+// @desc    Get fields for a specific table
 // @access  Private
-router.get('/bases/:baseId/tables/:tableId/fields', async (req, res) => {
+router.get('/bases/:baseId/tables/:tableId/fields', authenticateToken, async (req, res) => {
   try {
     const { baseId, tableId } = req.params;
-    const data = await makeAirtableRequest(req.airtableToken, `/meta/bases/${baseId}/tables`);
+    console.log('🔍 Fetching fields for table:', tableId, 'in base:', baseId);
+    
+    const user = await User.findById(req.user.userId);
+    
+    if (!user || !user.airtableAccessToken) {
+      return res.status(401).json({ message: 'No Airtable access token found' });
+    }
+    
+    // Get table schema which includes fields
+    const response = await axios.get(`https://api.airtable.com/v0/meta/bases/${baseId}/tables`, {
+      headers: {
+        'Authorization': `Bearer ${user.airtableAccessToken}`
+      }
+    });
     
     // Find the specific table
-    const table = data.tables.find(t => t.id === tableId);
+    const table = response.data.tables.find(t => t.id === tableId || t.name === tableId);
     
     if (!table) {
       return res.status(404).json({ message: 'Table not found' });
     }
     
-    // Filter fields to only supported types for form building
-    const supportedTypes = ['singleLineText', 'multilineText', 'singleSelect', 'multipleSelect', 'attachment'];
+    console.log('✅ Found table with fields:', table.fields.length);
     
-    const fields = table.fields
-      .filter(field => supportedTypes.includes(field.type))
-      .map(field => ({
-        id: field.id,
-        name: field.name,
-        type: field.type,
-        description: field.description,
-        options: field.options
-      }));
-    
-    res.json({ 
-      fields,
-      tableInfo: {
+    res.json({
+      fields: table.fields,
+      table: {
         id: table.id,
         name: table.name,
-        description: table.description,
-        primaryFieldId: table.primaryFieldId
+        description: table.description
       }
     });
     
   } catch (error) {
-    console.error('Get fields error:', error.response?.data || error.message);
-    
-    if (error.response?.status === 401) {
-      return res.status(401).json({ 
-        message: 'Airtable authorization expired',
-        needsRefresh: true 
-      });
-    }
-    
+    console.error('💥 Fetch fields error:', error.response?.data || error.message);
     res.status(500).json({ 
-      message: 'Failed to fetch fields',
-      error: error.response?.data?.error || error.message
+      message: 'Failed to fetch table fields',
+      error: error.response?.data || error.message 
     });
   }
 });
 
 // @route   POST /api/airtable/bases/:baseId/tables/:tableId/records
-// @desc    Create a new record in Airtable
+// @desc    Create a new record in a table
 // @access  Private
-router.post('/bases/:baseId/tables/:tableId/records', async (req, res) => {
+router.post('/bases/:baseId/tables/:tableId/records', authenticateToken, async (req, res) => {
   try {
     const { baseId, tableId } = req.params;
     const { fields } = req.body;
     
-    if (!fields || typeof fields !== 'object') {
-      return res.status(400).json({ message: 'Fields object is required' });
+    console.log('📝 Creating record in base:', baseId, 'table:', tableId);
+    
+    const user = await User.findById(req.user.userId);
+    
+    if (!user || !user.airtableAccessToken) {
+      return res.status(401).json({ message: 'No Airtable access token found' });
     }
     
-    const data = await makeAirtableRequest(
-      req.airtableToken, 
-      `/${baseId}/${tableId}`,
-      'POST',
+    // Create record in Airtable
+    const response = await axios.post(
+      `https://api.airtable.com/v0/${baseId}/${tableId}`,
       {
-        fields: fields,
-        typecast: true // Allow Airtable to convert field types
+        fields: fields
+      },
+      {
+        headers: {
+          'Authorization': `Bearer ${user.airtableAccessToken}`,
+          'Content-Type': 'application/json'
+        }
       }
     );
     
-    res.json({ 
+    console.log('✅ Record created successfully:', response.data.id);
+    
+    res.json({
       success: true,
-      recordId: data.id,
-      record: data
+      record: response.data
     });
     
   } catch (error) {
-    console.error('Create record error:', error.response?.data || error.message);
+    console.error('💥 Create record error:', error.response?.data || error.message);
     
     if (error.response?.status === 401) {
-      return res.status(401).json({ 
-        message: 'Airtable authorization expired',
-        needsRefresh: true 
+      res.status(401).json({ 
+        message: 'Invalid Airtable access token' 
+      });
+    } else {
+      res.status(500).json({ 
+        message: 'Failed to create record',
+        error: error.response?.data || error.message 
       });
     }
-    
-    if (error.response?.status === 422) {
-      return res.status(422).json({ 
-        message: 'Invalid field data',
-        details: error.response.data.error
-      });
-    }
-    
-    res.status(500).json({ 
-      message: 'Failed to create record',
-      error: error.response?.data?.error || error.message
-    });
-  }
-});
-
-// @route   GET /api/airtable/bases/:baseId/tables/:tableId/records
-// @desc    Get records from a table (for testing/preview)
-// @access  Private
-router.get('/bases/:baseId/tables/:tableId/records', async (req, res) => {
-  try {
-    const { baseId, tableId } = req.params;
-    const { maxRecords = 10, offset } = req.query;
-    
-    let endpoint = `/${baseId}/${tableId}?maxRecords=${maxRecords}`;
-    if (offset) {
-      endpoint += `&offset=${offset}`;
-    }
-    
-    const data = await makeAirtableRequest(req.airtableToken, endpoint);
-    
-    res.json(data);
-    
-  } catch (error) {
-    console.error('Get records error:', error.response?.data || error.message);
-    
-    if (error.response?.status === 401) {
-      return res.status(401).json({ 
-        message: 'Airtable authorization expired',
-        needsRefresh: true 
-      });
-    }
-    
-    res.status(500).json({ 
-      message: 'Failed to fetch records',
-      error: error.response?.data?.error || error.message
-    });
   }
 });
 
 // @route   POST /api/airtable/test-connection
-// @desc    Test Airtable connection
+// @desc    Test Airtable connection (matches frontend call)
 // @access  Private
-router.post('/test-connection', async (req, res) => {
+router.post('/test-connection', authenticateToken, async (req, res) => {
   try {
-    const data = await makeAirtableRequest(req.airtableToken, '/meta/whoami');
+    console.log('🧪 Testing Airtable connection for user:', req.user.userId);
     
-    res.json({ 
-      success: true,
-      user: data,
-      message: 'Connection successful'
-    });
+    const user = await User.findById(req.user.userId);
     
-  } catch (error) {
-    console.error('Test connection error:', error.response?.data || error.message);
-    
-    if (error.response?.status === 401) {
+    if (!user || !user.airtableAccessToken) {
+      console.log('❌ No user or access token found');
       return res.status(401).json({ 
-        message: 'Airtable authorization expired',
-        needsRefresh: true 
+        success: false,
+        message: 'No Airtable access token found' 
       });
     }
     
+    console.log('✅ User found, testing connection...');
+    
+    // Test connection by getting user info
+    const response = await axios.get('https://api.airtable.com/v0/meta/whoami', {
+      headers: {
+        'Authorization': `Bearer ${user.airtableAccessToken}`
+      }
+    });
+    
+    console.log('✅ Airtable connection successful');
+    
+    res.json({
+      success: true,
+      connected: true,
+      airtableUser: response.data,
+      message: 'Airtable connection successful'
+    });
+    
+  } catch (error) {
+    console.error('💥 Airtable test error:', error.response?.data || error.message);
     res.status(500).json({ 
       success: false,
-      message: 'Connection failed',
-      error: error.response?.data?.error || error.message
+      connected: false,
+      message: 'Airtable connection failed',
+      error: error.response?.data || error.message 
+    });
+  }
+});
+
+// @route   GET /api/airtable/test
+// @desc    Test Airtable connection (GET version)
+// @access  Private
+router.get('/test', authenticateToken, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.userId);
+    
+    if (!user || !user.airtableAccessToken) {
+      return res.status(401).json({ message: 'No Airtable access token found' });
+    }
+    
+    // Test connection by getting user info
+    const response = await axios.get('https://api.airtable.com/v0/meta/whoami', {
+      headers: {
+        'Authorization': `Bearer ${user.airtableAccessToken}`
+      }
+    });
+    
+    res.json({
+      success: true,
+      airtableUser: response.data,
+      message: 'Airtable connection successful'
+    });
+    
+  } catch (error) {
+    console.error('Airtable test error:', error.response?.data || error.message);
+    res.status(500).json({ 
+      message: 'Airtable connection failed',
+      error: error.response?.data || error.message 
     });
   }
 });
