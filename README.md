@@ -269,103 +269,26 @@ curl -X POST http://localhost:5000/api/auth/airtable/pat-login
 - [Express.js](https://expressjs.com/) for the backend framework
 - [MongoDB](https://www.mongodb.com/) for the database
 
-## ScreenShots
+## Screenshots
 
-## 📸 Screenshots & Demo
+![Screenshot](images/Screenshot%20from%202025-08-17%2016-42-39.png)
 
-### 🔐 Authentication & Setup
+![Screenshot](images/Screenshot%20from%202025-08-17%2016-42-55.png)
 
-**Login Screen**
-![Login Screen](Screenshot%20from%202025-08-17%2016-42-39.png)
+![Screenshot](images/Screenshot%20from%202025-08-17%2016-45-01.png)
 
-**Authentication Process**
-![Authentication](Screenshot%20from%202025-08-17%2016-42-55.png)
+![Screenshot](images/Screenshot%20from%202025-08-17%2016-45-22.png)
 
-### 🎯 Main Dashboard
+![Screenshot](images/Screenshot%20from%202025-08-17%2016-46-05.png)
 
-**Dashboard Overview**
-![Dashboard](Screenshot%20from%202025-08-17%2016-45-01.png)
+![Screenshot](images/Screenshot%20from%202025-08-17%2016-46-09.png)
 
-**Form Management Interface**
-![Form Management](Screenshot%20from%202025-08-17%2016-45-22.png)
+![Screenshot](images/Screenshot%20from%202025-08-17%2017-00-57.png)
 
-### 🛠️ Form Builder Wizard
+![Screenshot](images/Screenshot%20from%202025-08-17%2017-01-06.png)
 
-**Step 1: Test Connection**
-![Test Connection](Screenshot%20from%202025-08-17%2016-46-05.png)
+![Screenshot](images/Screenshot%20from%202025-08-17%2017-03-39.png)
 
-**Step 2: Base Selection**
-![Base Selection](Screenshot%20from%202025-08-17%2016-46-09.png)
+![Screenshot](images/Screenshot%20from%202025-08-17%2017-04-27.png)
 
-**Step 3: Configuration Setup**
-![Configuration](Screenshot%20from%202025-08-17%2017-00-57.png)
-
-**Step 4: Field Configuration**
-![Field Configuration](Screenshot%20from%202025-08-17%2017-01-06.png)
-
-**Step 5: Final Settings**
-![Final Settings](Screenshot%20from%202025-08-17%2017-03-39.png)
-
-### ⚙️ Advanced Features
-
-**Form Analytics & Management**
-![Analytics](Screenshot%20from%202025-08-17%2017-04-27.png)
-
-**Completed Form Setup**
-![Completed Setup](Screenshot%20from%202025-08-17%2017-23-47.png)
-
----
-
-## 🚀 Key Features Demonstrated
-
-| Feature | Screenshot |
-|---------|------------|
-| **Secure Authentication** | ![Auth](Screenshot%20from%202025-08-17%2016-42-55.png) |
-| **Intuitive Dashboard** | ![Dashboard](Screenshot%20from%202025-08-17%2016-45-01.png) |
-| **5-Step Form Wizard** | ![Wizard](Screenshot%20from%202025-08-17%2016-46-05.png) |
-| **Airtable Integration** | ![Integration](Screenshot%20from%202025-08-17%2016-46-09.png) |
-| **Form Management** | ![Management](Screenshot%20from%202025-08-17%2017-04-27.png) |
-
----
-
-## 📱 User Experience Flow
-
-<div align="center">
-
-### Step-by-Step Process
-
-1. **Authentication** → 2. **Dashboard** → 3. **Form Creation** → 4. **Configuration** → 5. **Launch**
-
-<img src="Screenshot%20from%202025-08-17%2016-42-39.png" width="150">
-<img src="Screenshot%20from%202025-08-17%2016-45-01.png" width="150">
-<img src="Screenshot%20from%202025-08-17%2016-46-05.png" width="150">
-<img src="Screenshot%20from%202025-08-17%2017-03-39.png" width="150">
-<img src="Screenshot%20from%202025-08-17%2017-23-47.png" width="150">
-
-</div>
-
----
-
-<details>
-<summary>🖼️ Click to view all screenshots</summary>
-
-### Authentication Flow
-![Login](Screenshot%20from%202025-08-17%2016-42-39.png)
-![Auth Process](Screenshot%20from%202025-08-17%2016-42-55.png)
-
-### Dashboard & Navigation
-![Dashboard](Screenshot%20from%202025-08-17%2016-45-01.png)
-![Navigation](Screenshot%20from%202025-08-17%2016-45-22.png)
-
-### Form Builder Wizard
-![Step 1](Screenshot%20from%202025-08-17%2016-46-05.png)
-![Step 2](Screenshot%20from%202025-08-17%2016-46-09.png)
-![Step 3](Screenshot%20from%202025-08-17%2017-00-57.png)
-![Step 4](Screenshot%20from%202025-08-17%2017-01-06.png)
-![Step 5](Screenshot%20from%202025-08-17%2017-03-39.png)
-
-### Management & Analytics
-![Management](Screenshot%20from%202025-08-17%2017-04-27.png)
-![Final Result](Screenshot%20from%202025-08-17%2017-23-47.png)
-
-</details>
+![Screenshot](images/Screenshot%20from%202025-08-17%2017-23-47.png)
