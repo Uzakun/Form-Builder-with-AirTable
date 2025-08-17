@@ -1,0 +1,28 @@
+# Ignore compiled Java files
+*.class
+
+# Ignore operating system specific files
+.DS_Store
+Thumbs.db
+
+# Ignore build output directories
+build/
+dist/
+target/
+
+# Ignore log files
+*.log
+logs/
+
+# Ignore dependency directories
+node_modules/
+vendor/
+
+# Ignore temporary files
+*.tmp
+temp/
+
+# Ignore sensitive configuration files (e.g., database credentials)
+config.local.php
+.env
+
