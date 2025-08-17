@@ -1,6 +1,6 @@
-import axios from 'axios';
 import { createContext, useContext, useReducer } from 'react';
 import { toast } from 'react-toastify';
+import { api } from '../config/api';
 
 // Initial state
 const initialState = {
@@ -130,7 +130,7 @@ export const FormProvider = ({ children }) => {
   const getForms = async (params = {}) => {
     try {
       setLoading(true);
-      const response = await axios.get('/api/forms', { params });
+      const response = await api.get('/api/forms', { params });
       dispatch({ type: FORM_ACTIONS.SET_FORMS, payload: response.data.forms });
       return response.data;
     } catch (error) {
@@ -145,7 +145,7 @@ export const FormProvider = ({ children }) => {
   const getForm = async (id) => {
     try {
       setLoading(true);
-      const response = await axios.get(`/api/forms/${id}`);
+      const response = await api.get(`/api/forms/${id}`);
       dispatch({ type: FORM_ACTIONS.SET_CURRENT_FORM, payload: response.data.form });
       return response.data.form;
     } catch (error) {
@@ -160,7 +160,7 @@ export const FormProvider = ({ children }) => {
   const createForm = async (formData) => {
     try {
       setLoading(true);
-      const response = await axios.post('/api/forms', formData);
+      const response = await api.post('/api/forms', formData);
       dispatch({ type: FORM_ACTIONS.ADD_FORM, payload: response.data.form });
       toast.success('Form created successfully!');
       return response.data.form;
@@ -178,7 +178,7 @@ export const FormProvider = ({ children }) => {
   const updateForm = async (id, formData) => {
     try {
       setLoading(true);
-      const response = await axios.put(`/api/forms/${id}`, formData);
+      const response = await api.put(`/api/forms/${id}`, formData);
       dispatch({ type: FORM_ACTIONS.UPDATE_FORM, payload: response.data.form });
       toast.success('Form updated successfully!');
       return response.data.form;
@@ -196,7 +196,7 @@ export const FormProvider = ({ children }) => {
   const deleteForm = async (id) => {
     try {
       setLoading(true);
-      await axios.delete(`/api/forms/${id}`);
+      await api.delete(`/api/forms/${id}`);
       dispatch({ type: FORM_ACTIONS.DELETE_FORM, payload: id });
       toast.success('Form deleted successfully!');
     } catch (error) {
@@ -213,7 +213,7 @@ export const FormProvider = ({ children }) => {
   const duplicateForm = async (id, title) => {
     try {
       setLoading(true);
-      const response = await axios.post(`/api/forms/${id}/duplicate`, { title });
+      const response = await api.post(`/api/forms/${id}/duplicate`, { title });
       dispatch({ type: FORM_ACTIONS.ADD_FORM, payload: response.data.form });
       toast.success('Form duplicated successfully!');
       return response.data.form;
@@ -230,7 +230,7 @@ export const FormProvider = ({ children }) => {
 
   const publishForm = async (id, isPublished) => {
     try {
-      const response = await axios.post(`/api/forms/${id}/publish`, { isPublished });
+      const response = await api.post(`/api/forms/${id}/publish`, { isPublished });
       dispatch({ type: FORM_ACTIONS.UPDATE_FORM, payload: response.data.form });
       toast.success(`Form ${isPublished ? 'published' : 'unpublished'} successfully!`);
       return response.data.form;
@@ -246,7 +246,7 @@ export const FormProvider = ({ children }) => {
   const getBases = async () => {
     try {
       setLoading(true);
-      const response = await axios.get('/api/airtable/bases');
+      const response = await api.get('/api/airtable/bases');
       dispatch({ type: FORM_ACTIONS.SET_BASES, payload: response.data.bases });
       return response.data.bases;
     } catch (error) {
@@ -261,7 +261,7 @@ export const FormProvider = ({ children }) => {
   const getTables = async (baseId) => {
     try {
       setLoading(true);
-      const response = await axios.get(`/api/airtable/bases/${baseId}/tables`);
+      const response = await api.get(`/api/airtable/bases/${baseId}/tables`);
       dispatch({ type: FORM_ACTIONS.SET_TABLES, payload: response.data.tables });
       return response.data.tables;
     } catch (error) {
@@ -276,7 +276,7 @@ export const FormProvider = ({ children }) => {
   const getFields = async (baseId, tableId) => {
     try {
       setLoading(true);
-      const response = await axios.get(`/api/airtable/bases/${baseId}/tables/${tableId}/fields`);
+      const response = await api.get(`/api/airtable/bases/${baseId}/tables/${tableId}/fields`);
       dispatch({ type: FORM_ACTIONS.SET_FIELDS, payload: response.data.fields });
       return response.data;
     } catch (error) {
@@ -290,7 +290,7 @@ export const FormProvider = ({ children }) => {
 
   const testAirtableConnection = async () => {
     try {
-      const response = await axios.post('/api/airtable/test-connection');
+      const response = await api.post('/api/airtable/test-connection');
       toast.success('Airtable connection successful!');
       return response.data;
     } catch (error) {
@@ -305,7 +305,7 @@ export const FormProvider = ({ children }) => {
   const getResponses = async (formId, params = {}) => {
     try {
       setLoading(true);
-      const response = await axios.get(`/api/forms/${formId}/responses`, { params });
+      const response = await api.get(`/api/forms/${formId}/responses`, { params });
       dispatch({ type: FORM_ACTIONS.SET_RESPONSES, payload: response.data.responses });
       return response.data;
     } catch (error) {
@@ -331,7 +331,7 @@ export const FormProvider = ({ children }) => {
         formData.append(file.fieldName, file.file);
       });
       
-      const response = await axios.post(`/api/responses/submit/${formId}`, formData, {
+      const response = await api.post(`/api/responses/submit/${formId}`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
         }
@@ -347,7 +347,7 @@ export const FormProvider = ({ children }) => {
 
   const validateResponse = async (formId, responses) => {
     try {
-      const response = await axios.post(`/api/responses/validate/${formId}`, { responses });
+      const response = await api.post(`/api/responses/validate/${formId}`, { responses });
       return response.data;
     } catch (error) {
       console.error('Validate response error:', error);
@@ -359,7 +359,7 @@ export const FormProvider = ({ children }) => {
   const getAnalytics = async (formId, params = {}) => {
     try {
       setLoading(true);
-      const response = await axios.get(`/api/forms/${formId}/analytics`, { params });
+      const response = await api.get(`/api/forms/${formId}/analytics`, { params });
       dispatch({ type: FORM_ACTIONS.SET_ANALYTICS, payload: response.data });
       return response.data;
     } catch (error) {
@@ -373,7 +373,7 @@ export const FormProvider = ({ children }) => {
 
   const exportResponses = async (formId, format = 'csv', params = {}) => {
     try {
-      const response = await axios.get(`/api/responses/export/${formId}`, {
+      const response = await api.get(`/api/responses/export/${formId}`, {
         params: { format, ...params },
         responseType: format === 'csv' ? 'blob' : 'json'
       });
