@@ -1,6 +1,6 @@
-import axios from 'axios';
 import { createContext, useContext, useEffect, useReducer } from 'react';
 import { toast } from 'react-toastify';
+import { api } from '../config/api';
 
 // Initial state
 const initialState = {
@@ -101,10 +101,10 @@ export const useAuth = () => {
 export const AuthProvider = ({ children }) => {
   const [state, dispatch] = useReducer(authReducer, initialState);
 
-  // Set up axios interceptors
+  // Set up api interceptors
   useEffect(() => {
     // Request interceptor to add token
-    const requestInterceptor = axios.interceptors.request.use(
+    const requestInterceptor = api.interceptors.request.use(
       (config) => {
         if (state.token) {
           config.headers.Authorization = `Bearer ${state.token}`;
@@ -115,7 +115,7 @@ export const AuthProvider = ({ children }) => {
     );
 
     // Response interceptor to handle auth errors
-    const responseInterceptor = axios.interceptors.response.use(
+    const responseInterceptor = api.interceptors.response.use(
       (response) => response,
       (error) => {
         if (error.response?.status === 401) {
@@ -135,8 +135,8 @@ export const AuthProvider = ({ children }) => {
 
     // Cleanup interceptors
     return () => {
-      axios.interceptors.request.eject(requestInterceptor);
-      axios.interceptors.response.eject(responseInterceptor);
+      api.interceptors.request.eject(requestInterceptor);
+      api.interceptors.response.eject(responseInterceptor);
     };
   }, [state.token]);
 
@@ -153,7 +153,7 @@ export const AuthProvider = ({ children }) => {
   const getCurrentUser = async () => {
     try {
       dispatch({ type: AUTH_ACTIONS.SET_LOADING, payload: true });
-      const response = await axios.get('/api/auth/me');
+      const response = await api.get('/api/auth/me');
       
       dispatch({
         type: AUTH_ACTIONS.LOGIN_SUCCESS,
@@ -176,7 +176,7 @@ export const AuthProvider = ({ children }) => {
     try {
       dispatch({ type: AUTH_ACTIONS.LOGIN_START });
       
-      const response = await axios.get('/api/auth/airtable');
+      const response = await api.get('/api/auth/airtable');
       
       // Redirect to Airtable OAuth
       window.location.href = response.data.authUrl;
@@ -196,7 +196,7 @@ export const AuthProvider = ({ children }) => {
       localStorage.setItem('token', token);
       
       // Get user data
-      const response = await axios.get('/api/auth/me', {
+      const response = await api.get('/api/auth/me', {
         headers: { Authorization: `Bearer ${token}` }
       });
       
@@ -224,7 +224,7 @@ export const AuthProvider = ({ children }) => {
 
   const refreshToken = async () => {
     try {
-      await axios.post('/api/auth/refresh');
+      await api.post('/api/auth/refresh');
       // Token is refreshed automatically by the backend
       toast.info('Session refreshed');
     } catch (error) {
@@ -237,7 +237,7 @@ export const AuthProvider = ({ children }) => {
   const logout = async () => {
     try {
       if (state.token) {
-        await axios.post('/api/auth/logout');
+        await api.post('/api/auth/logout');
       }
     } catch (error) {
       console.error('Logout error:', error);
@@ -250,7 +250,7 @@ export const AuthProvider = ({ children }) => {
 
   const deleteAccount = async () => {
     try {
-      await axios.delete('/api/auth/account');
+      await api.delete('/api/auth/account');
       localStorage.removeItem('token');
       dispatch({ type: AUTH_ACTIONS.LOGOUT });
       toast.success('Account deleted successfully');
